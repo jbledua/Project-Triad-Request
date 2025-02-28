@@ -1,32 +1,43 @@
+---
 services:
-  overseerr:
-    image: lscr.io/linuxserver/overseerr:latest
-    container_name: overseerr
-    network_mode: "service:tailscale-request"  # Use Tailscale's network
+  ts-overseerr:
+    image: tailscale/tailscale:latest
+    container_name: ts-overseerr
+    hostname: ${TS_HOSTNAME}
     environment:
       - PUID=${PUID}
       - PGID=${PGID}
-      - TZ=America/Toronto
-    volumes:
-      - ${DOCKER_VOLUME_BASE}/overseerr:/config
-    restart: unless-stopped
-
-  tailscale-request:
-    image: tailscale/tailscale:latest
-    container_name: tailscale-request
-    hostname: ${TS_HOSTNAME}
-    environment:
       - TS_AUTHKEY=${TS_AUTHKEY}
       - "TS_EXTRA_ARGS=--advertise-tags=tag:container --reset"
       - TS_SERVE_CONFIG=/config/overseerr.json
       - TS_STATE_DIR=/var/lib/tailscale
       - TS_USERSPACE=false
     volumes:
-      - ${DOCKER_VOLUME_BASE}/tailscale:/var/lib/tailscale
-      - ${DOCKER_VOLUME_BASE}/tailscale-config:/config
-      - ./config/overseerr.json:/config/overseerr.json:ro  # Mount the config file
+      - ${PWD}/state:/var/lib/tailscale
+      - ${PWD}/config:/config
     devices:
       - /dev/net/tun:/dev/net/tun
     cap_add:
-      - NET_ADMIN
+      - net_admin
     restart: unless-stopped
+
+  overseerr:
+    image: lscr.io/linuxserver/overseerr:latest
+    container_name: overseerr
+    network_mode: service:ts-overseerr
+    depends_on:
+      - ts-overseerr
+    volumes:
+      - overseerr-data:/app/config
+    environment:
+      - PUID=${PUID}
+      - PGID=${PGID}
+      - LOG_LEVEL=info
+      - TZ=TZ=America/Toronto
+    restart: unless-stopped
+
+volumes:
+  overseerr-data:
+    driver: local
+  ts-overseerr:
+    driver: local
