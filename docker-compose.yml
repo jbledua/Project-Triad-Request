@@ -14,14 +14,17 @@ services:
   tailscale-request:
     image: tailscale/tailscale:latest
     container_name: tailscale-request
-    hostname: request-stack
+    hostname: ${TS_HOSTNAME}
     environment:
       - TS_AUTHKEY=${TS_AUTHKEY}
-      - TS_EXTRA_ARGS=--advertise-tags=tag:container
+      - "TS_EXTRA_ARGS=--advertise-tags=tag:container --reset"
+      - TS_SERVE_CONFIG=/config/overseerr.json
       - TS_STATE_DIR=/var/lib/tailscale
       - TS_USERSPACE=false
     volumes:
       - ${DOCKER_VOLUME_BASE}/tailscale:/var/lib/tailscale
+      - ${DOCKER_VOLUME_BASE}/tailscale-config:/config
+      - ./config/overseerr.json:/config/overseerr.json:ro  # Mount the config file
     devices:
       - /dev/net/tun:/dev/net/tun
     cap_add:
