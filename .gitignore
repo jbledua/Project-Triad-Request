@@ -1,3 +1,2 @@
-
-".env" 
-"tailscale-request/state/" 
+tailscale-request/state/
+.env
