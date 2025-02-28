@@ -1,0 +1,31 @@
+version: "3.7"
+services:
+  overseerr:
+    image: lscr.io/linuxserver/overseerr:latest
+    container_name: overseerr
+    network_mode: "bridge"
+    environment:
+      - PUID=${PUID}
+      - PGID=${PGID}
+      - TZ=America/Toronto
+    volumes:
+      - ${DOCKER_VOLUME_BASE}/overseerr:/config
+    ports:
+      - 5055:5055
+    restart: unless-stopped
+
+  tailscale-request:
+    image: tailscale/tailscale:latest
+    hostname: request-stack
+    environment:
+      - TS_AUTHKEY=${TS_AUTHKEY}
+      - TS_EXTRA_ARGS=--advertise-tags=tag:container
+      - TS_STATE_DIR=/var/lib/tailscale
+      - TS_USERSPACE=false
+    volumes:
+      - ${PWD}/tailscale-request/state:/var/lib/tailscale
+    devices:
+      - /dev/net/tun:/dev/net/tun
+    cap_add:
+      - NET_ADMIN
+    restart: unless-stopped
